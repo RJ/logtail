@@ -3,12 +3,19 @@
 -export([websocket_init/3, websocket_handle/3,
          websocket_info/3, websocket_terminate/3]).
 
+subscribe_to_default_sources() ->
+    lists:foreach(fun({{file, Path, Opts}, _Pid}) ->
+        case lists:member(auto, Opts) of
+            true -> logtail_mgr:subscribe({file, Path});
+            false -> nop
+        end
+    end, logtail_mgr:which_sources()).
+
 init({tcp, http}, _Req, _Opts) ->
     {upgrade, protocol, cowboy_http_websocket}.
 
 websocket_init(_TransportName, Req, _Opts) ->
     self() ! send_init,
-    logtail_mgr:subscribe({file, "/tmp/logtail.txt"}),
     {ok, Req, undefined_state}.
 
 websocket_handle({text, Msg}, Req, State) ->
@@ -23,8 +30,9 @@ websocket_info(send_init, Req, State) ->
     Sources = logtail_mgr:which_sources(),
     Json = {[{<<"type">>, <<"sources">>},
             {<<"list">>, 
-                { [ {list_to_binary(Path), true} || {{file, Path, _Opts},_Pid} <- Sources] }
+                { [ {list_to_binary(Path), lists:member(auto, Opts)} || {{file, Path, Opts},_Pid} <- Sources] }
             }]},
+    subscribe_to_default_sources(),
     {reply, {text, ejson:encode(Json)}, Req, State};
 
 websocket_info({{subscription, {file, Path}}, Line}, Req, State) ->

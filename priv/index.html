@@ -1,8 +1,11 @@
+<!-- quirksmode -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN">
 <html>
 <head>
 <title>logtail</title>
-<script language="javascript">
+<script type="text/javascript">
 var lastSource;
+var linesAdded = 0;
 
 function init() {
     console.log("init");
@@ -52,8 +55,11 @@ function handleSources(j) {
             websocket.send(JSON.stringify(msg));
         };
 
-        document.getElementById("sourcelist").appendChild(cb);
-        document.getElementById("sourcelist").appendChild(label);
+        var sp = document.createElement('span');
+        sp.className = 'item';
+        sp.appendChild(cb);
+        sp.appendChild(label);
+        document.getElementById("sourcelist").appendChild(sp);
     }
 }
 
@@ -72,10 +78,13 @@ function writeSourceHeader(source) {
 }
 
 function appendLine(line, classname) {
+    linesAdded ++;
     e = document.createElement("div");
+    if(linesAdded % 2 == 0) classname += ' alt';
     e.className = classname; 
     e.innerText = line;
     document.getElementById('container').appendChild(e);
+    window.scrollTo(0, document.body.scrollHeight);
 }
 
 function doSend(message) { 
@@ -85,25 +94,79 @@ function doSend(message) {
 
 window.addEventListener("load", init, false); 
 </script>
+<style type='text/css'>
+
+.alt {
+    background-color:#f0f0f0;
+}
+
+body
+{
+  margin: 0;
+  padding: 8em 0 0 0;
+  color: #000;
+  background: #fff;
+  font-size: 1em;
+}
+div#fixedbox
+{
+  overflow: auto;
+  width: 100%;
+  height: 8em;
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #000;
+  background: #ddd;
+  padding:10px;
+}
+
+div#fixedbox h1 {
+    padding:0; margin:0;
+}
+
+div#fixedbox span.item {
+    padding-right: 5px;
+}
+
+div#content
+{
+  padding: 1em;
+}
+
+@media screen
+{
+  body>div#fixedbox
+  {
+    position: fixed;
+  }
+  /* Very ugly fix for page anchors */
+  ol>li#dog3
+  {
+    margin-top: -8em;
+    padding-top: 8em;
+  }
+}
+
+
+</style>
 </head>
 <body>
-<h1>logtail</h1>
-<p>
-For debugging, I suggest something like:  <code>watch -n5 '`date` &gt;&gt; /tmp/logtail.txt'</code>
-</p>
-<hr/>
 
-<div class="sourcesMenu" style="border:1px solid green">
-<ul id="sourcelist">
-</ul>
+<div id='content'>
+    <pre id="container">
+    </pre>
 </div>
 
-<hr/>
-
-<div style="border:1px solid black">
-<pre id="container">
-</pre>
+<div id='fixedbox'>
+    <h1>logtail</h1>
+    For debugging, I suggest something like:  <code>watch -n5 '`date` &gt;&gt; /tmp/logtail.txt'</code>
+    <div id="sourcelist">
+    </div>
 </div>
+
+<a href="https://github.com/RJ/logtail"><img style="position: fixed; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png" alt="Fork me on GitHub"></a>
 
 </body>
 </html>
+
