@@ -1,0 +1,12 @@
+{application, logtail,
+ [
+  {description, "tail -f logfiles in your browser"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {mod, { logtail, []}},
+  {env, []}
+ ]}.

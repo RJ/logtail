@@ -1,0 +1,109 @@
+<html>
+<head>
+<title>logtail</title>
+<script language="javascript">
+var lastSource;
+
+function init() {
+    console.log("init");
+    var wsUri = "ws://localhost:9090/websocket"; 
+    window.websocket = new WebSocket(wsUri); 
+    websocket.onopen = function(evt) { console.log("ws connected"); }; 
+    websocket.onclose = function(evt) { console.warn("ws closed"); }; 
+    websocket.onmessage = function(evt) { onMessage(evt) }; 
+    websocket.onerror = function(evt) { console.warn("ws error"); };   
+}
+
+function onMessage(evt) { 
+    console.log(evt.data);
+    var j = JSON.parse(evt.data);
+    switch(j.type) {
+        case 'line':
+            handleLine(j);
+            break;
+        case 'sources':
+            handleSources(j);
+            break;
+    }
+}
+
+function handleSources(j) {
+    var sources = j.list;
+    console.log("Sources:", sources);
+    var sid=0;
+    for(var s in sources) {
+        sid++;
+        var checkid = 'source-'+sid;
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = s;
+        cb.id = checkid;
+        cb.checked = !!sources[s];
+
+        var label = document.createElement("label");
+        label.htmlFor = checkid;
+        label.appendChild( document.createTextNode(s) );
+
+        cb.onclick = function() {
+            var msg = { 
+                type: (this.checked ? 'subscribe' : 'unsubscribe'),
+                path: this.value 
+            }
+            websocket.send(JSON.stringify(msg));
+        };
+
+        document.getElementById("sourcelist").appendChild(cb);
+        document.getElementById("sourcelist").appendChild(label);
+    }
+}
+
+function handleLine(j) {
+    if( lastSource != j.source ) {
+        writeSourceHeader(j.source);
+        lastSource = j.source;
+    }
+    appendLine( j.line, 'line');
+}  
+
+function writeSourceHeader(source) {
+    console.log("source change", source);
+    var line = "Source: "+source;
+    appendLine( line, 'source' );
+}
+
+function appendLine(line, classname) {
+    e = document.createElement("div");
+    e.className = classname; 
+    e.innerText = line;
+    document.getElementById('container').appendChild(e);
+}
+
+function doSend(message) { 
+    console.log("sending", message);
+    websocket.send(message); 
+}
+
+window.addEventListener("load", init, false); 
+</script>
+</head>
+<body>
+<h1>logtail</h1>
+<p>
+For debugging, I suggest something like:  <code>watch -n5 '`date` &gt;&gt; /tmp/logtail.txt'</code>
+</p>
+<hr/>
+
+<div class="sourcesMenu" style="border:1px solid green">
+<ul id="sourcelist">
+</ul>
+</div>
+
+<hr/>
+
+<div style="border:1px solid black">
+<pre id="container">
+</pre>
+</div>
+
+</body>
+</html>
