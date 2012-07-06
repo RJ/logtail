@@ -165,4 +165,15 @@ start_tailer({file, Path, Opts}) when is_list(Path), is_list(Opts) ->
         _ ->
             lager:info("starting tailer for {file, ~s}", [Path]),
             supervisor:start_child(logtail_tailer_sup, [{file, Path, Opts}])
-    end.
+    end;
+
+start_tailer({files, Path}) -> 
+    start_tailer({files, Path, []});
+
+start_tailer({files, Path, Opts}) when is_list(Path), is_list(Opts) ->
+    lists:foreach(fun(P) ->
+        start_tailer({file, P, Opts})
+    end, filelib:wildcard(Path)).
+    
+
+
